@@ -229,39 +229,47 @@ fi
 echo ""
 
 # Add SKILL.md files to skills folder
-echo -e "${BLUE}=== Adding Skill Files ===${NC}"
+echo -e "${BLUE}=== Syncing Skills Folders ===${NC}"
 
 new_skills=0
 updated_skills=0
-while IFS= read -r -d '' file; do
-    # Get the parent folder name (e.g., /path/to/skills/stripe-integration/SKILL.md -> stripe-integration)
-    parent_dir=$(dirname "$file")
-    folder_name=$(basename "$parent_dir")
-    target_name="${folder_name}.skill.md"
-    
-    # Check if this skill already exists
-    if [ ! -f "$SKILLS_DIR/$target_name" ]; then
-        cp "$file" "$SKILLS_DIR/$target_name"
-        ((new_skills++))
-        echo -e "${GREEN}  ✓ Added: $target_name${NC}"
-    else
-        # Update existing skill file if different
-        if ! cmp -s "$file" "$SKILLS_DIR/$target_name"; then
-            cp "$file" "$SKILLS_DIR/$target_name"
-            ((updated_skills++))
-            echo -e "${GREEN}  ✓ Updated: $target_name${NC}"
-        fi
+
+# Find all skills directories and copy them over
+while IFS= read -r -d '' skills_parent; do
+    # skills_parent is like /path/to/plugins/payment-processing/skills
+    # We want to copy each subdirectory inside it
+    if [ -d "$skills_parent" ]; then
+        for skill_dir in "$skills_parent"/*/; do
+            if [ -d "$skill_dir" ]; then
+                skill_name=$(basename "$skill_dir")
+                target_dir="$SKILLS_DIR/$skill_name"
+                
+                if [ ! -d "$target_dir" ]; then
+                    # New skill folder
+                    cp -r "$skill_dir" "$target_dir"
+                    ((new_skills++))
+                    echo -e "${GREEN}  ✓ Added: $skill_name/${NC}"
+                else
+                    # Update existing skill folder if different
+                    if ! diff -qr "$skill_dir" "$target_dir" > /dev/null 2>&1; then
+                        cp -r "$skill_dir"/* "$target_dir/"
+                        ((updated_skills++))
+                        echo -e "${GREEN}  ✓ Updated: $skill_name/${NC}"
+                    fi
+                fi
+            fi
+        done
     fi
-done < <(find "$PLUGINS_DIR" -type f -name "SKILL.md" -print0)
+done < <(find "$PLUGINS_DIR" -type d -name "skills" -print0)
 
 if [ $new_skills -eq 0 ] && [ $updated_skills -eq 0 ]; then
     echo -e "${YELLOW}No new or updated skills${NC}"
 else
     if [ $new_skills -gt 0 ]; then
-        echo -e "${GREEN}Added $new_skills new skills${NC}"
+        echo -e "${GREEN}Added $new_skills new skill folders${NC}"
     fi
     if [ $updated_skills -gt 0 ]; then
-        echo -e "${GREEN}Updated $updated_skills existing skills${NC}"
+        echo -e "${GREEN}Updated $updated_skills existing skill folders${NC}"
     fi
 fi
 echo ""
