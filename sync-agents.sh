@@ -80,9 +80,9 @@ find "$PLUGINS_DIR" -type f -path "*/disabled/*.md" -print0 | while IFS= read -r
     fi
 done
 
-# Add files from personal_additions folder
-if [ -d "$PERSONAL_DIR" ]; then
-    find "$PERSONAL_DIR" -type f -name "*.agent.md" -print0 | while IFS= read -r -d '' file; do
+# Add files from personal_additions/agents folder
+if [ -d "$PERSONAL_DIR/agents" ]; then
+    find "$PERSONAL_DIR/agents" -type f -name "*.agent.md" -print0 | while IFS= read -r -d '' file; do
         filename=$(basename "$file")
         # Personal additions take precedence, so replace any existing entry
         if grep -q "^$filename|" "$temp_index" 2>/dev/null; then
@@ -261,6 +261,30 @@ while IFS= read -r -d '' skills_parent; do
         done
     fi
 done < <(find "$PLUGINS_DIR" -type d -name "skills" -print0)
+
+# Also sync custom skills from personal_additions
+if [ -d "$PERSONAL_DIR/skills" ]; then
+    for skill_dir in "$PERSONAL_DIR/skills"/*/; do
+        if [ -d "$skill_dir" ]; then
+            skill_name=$(basename "$skill_dir")
+            target_dir="$SKILLS_DIR/$skill_name"
+            
+            if [ ! -d "$target_dir" ]; then
+                # New personal skill folder
+                cp -r "$skill_dir" "$target_dir"
+                ((new_skills++))
+                echo -e "${GREEN}  ✓ Added (personal): $skill_name/${NC}"
+            else
+                # Update existing personal skill folder if different
+                if ! diff -qr "$skill_dir" "$target_dir" > /dev/null 2>&1; then
+                    cp -r "$skill_dir"/* "$target_dir/"
+                    ((updated_skills++))
+                    echo -e "${GREEN}  ✓ Updated (personal): $skill_name/${NC}"
+                fi
+            fi
+        fi
+    done
+fi
 
 if [ $new_skills -eq 0 ] && [ $updated_skills -eq 0 ]; then
     echo -e "${YELLOW}No new or updated skills${NC}"
