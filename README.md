@@ -100,6 +100,23 @@ You install **plugins**, which bundle agents:
 /plugin install javascript-typescript@claude-code-workflows
 ```
 
+### Cloning with Submodule
+
+This repository includes a curated collection of agent files in the `vscode_agents_folder` submodule. To clone the repository with the submodule:
+
+```bash
+# Clone with submodule
+git clone --recurse-submodules git@github.com:pelan05/vscode_agents_folder.git
+
+# If you already cloned without submodules
+git submodule update --init --recursive
+
+# To pull latest changes including submodule updates
+git pull --recurse-submodules
+```
+
+The `vscode_agents_folder` submodule contains a flattened collection of agent files extracted from the `/plugins` folder for easier access and distribution.
+
 ### Troubleshooting
 
 **"Plugin not found"** → Use plugin names, not agent names. Add `@claude-code-workflows` suffix.

@@ -1,0 +1,3 @@
+[submodule "vscode_agents_folder"]
+	path = vscode_agents_folder
+	url = git@github.com:pelan05/vscode_agents_folder.git
